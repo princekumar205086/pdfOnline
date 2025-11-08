@@ -8,14 +8,28 @@ use App\Models\Transaction;
 use App\Models\Purchase;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 
 class DocumentPreview extends Component
 {
     public Document $document;
+    public ?string $previewDataUri = null;
 
     public function mount(Document $document)
     {
         $this->document = $document;
+
+        // Prepare a secure inline preview without exposing any direct file URL
+        try {
+            if (Storage::disk('private')->exists($this->document->file_path)) {
+                $bytes = Storage::disk('private')->get($this->document->file_path);
+                // Embed as data URI to avoid any downloadable link or network request to the file
+                $this->previewDataUri = 'data:application/pdf;base64,' . base64_encode($bytes);
+            }
+        } catch (\Throwable $e) {
+            // If preview cannot be loaded, fail silently and show message in view
+            $this->previewDataUri = null;
+        }
 
         // If returning from Cashfree, verify payment
         $paymentId = request()->query('payment_id');

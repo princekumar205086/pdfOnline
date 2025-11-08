@@ -34,11 +34,21 @@
             </div>
             <div>
                 <h2 class="text-xl font-bold mb-2">PDF Preview</h2>
-                <div class="border p-4 h-96">
-                    {{-- This is a placeholder for the PDF preview. 
-                         A more advanced implementation might use a library like PDF.js 
-                         or an iframe to display a watermarked version. --}}
-                    <p class="text-center text-gray-500">PDF preview is not available in this demo.</p>
+                <div class="border relative h-96" oncontextmenu="return false;">
+                    @if($previewDataUri)
+                        <iframe
+                            src="{{ $previewDataUri }}#toolbar=0&navpanes=0&scrollbar=0"
+                            class="w-full h-full"
+                            sandbox="allow-scripts allow-same-origin"
+                            style="border:0;"
+                        ></iframe>
+                        <!-- Transparent overlay to discourage interactions like clicking toolbar -->
+                        <div class="absolute inset-0" style="pointer-events: none;"></div>
+                    @else
+                        <div class="flex items-center justify-center w-full h-full">
+                            <p class="text-center text-gray-500">Preview unavailable. The file may be missing or cannot be rendered.</p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

@@ -8,10 +8,12 @@
 
         <!-- Fonts -->
         <link rel="stylesheet" href="https://fonts.bunny.net/css2?family=Nunito:wght@400;600;700&display=swap">
-
+        <script src="https://cdn.tailwindcss.com"></script>
         <!-- Styles -->
         @livewireStyles
-        <link rel="stylesheet" href="{{ asset('css/app.css') }}">
+        @if (file_exists(public_path('build/manifest.json')) || file_exists(public_path('hot')))
+            @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @endif
     </head>
     <body class="antialiased">
         <div class="min-h-screen bg-gray-100">
