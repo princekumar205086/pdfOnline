@@ -29,6 +29,7 @@ class TransactionsTable
                 TextColumn::make('amount')
                     ->numeric()
                     ->sortable(),
+                    
                 TextColumn::make('status')
                     ->searchable(),
                 TextColumn::make('created_at')

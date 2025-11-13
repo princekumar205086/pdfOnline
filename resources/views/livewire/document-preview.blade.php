@@ -85,7 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const pdfContainer = document.querySelector('.preview-container');
     if (!pdfContainer) return;
 
-    const ACCESS_DURATION = 600000; // 10 minutes (in ms)
+    const ACCESS_DURATION = 300000; // 10 minutes (in ms)
 
     window.addEventListener('keydown', (e) => {
         const forbiddenCombos = [

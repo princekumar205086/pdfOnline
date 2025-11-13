@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', DocumentSearch::class);
 
 // Document routes
-Route::get('/document/{document}', DocumentPreview::class)->name('document.preview');
+Route::get('/document/{document}', DocumentPreview::class)->middleware(['auth', 'verified'])->name('document.preview');
 Route::get('/download/{document}', [DocumentDownloadController::class, 'download'])->middleware('signed')->name('document.download');
 
 // Webhook for payment notifications
