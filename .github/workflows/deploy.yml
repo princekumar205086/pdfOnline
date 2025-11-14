@@ -1,0 +1,29 @@
+name: Deploy Laravel to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.VPS_KEY }}
+
+    - name: Deploy to VPS
+      run: |
+        ssh -o StrictHostKeyChecking=no ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "
+          cd /var/www/docs.zxconline.com || git clone https://github.com/yourusername/yourrepo.git /var/www/docs.zxconline.com
+          cd /var/www/docs.zxconline.com
+          git pull origin main
+          composer install --no-interaction --prefer-dist --optimize-autoloader
+          php artisan migrate --force
+          php artisan config:cache
+          chown -R www-data:www-data /var/www/docs.zxconline.com
+        "
