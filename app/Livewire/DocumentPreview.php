@@ -17,7 +17,7 @@ class DocumentPreview extends Component
 
     public function mount(Document $document)
     {
-        $this->document = $document;
+        $this->document = $document->load('files');
 
         // Prepare a secure inline preview without exposing any direct file URL
         try {

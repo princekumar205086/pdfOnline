@@ -105,6 +105,8 @@
                             <th class="border p-3 text-left">District</th>
                             <th class="border p-3 text-left">Anchal</th>
                             <th class="border p-3 text-left">Mauza</th>
+                            <th class="border p-3 text-left">File Title</th>
+                            <th class="border p-3 text-left">File Name</th>
                             <th class="border p-3 text-left">Price</th>
                             <th class="border p-3 text-center">Action</th>
                         </tr>
@@ -116,11 +118,27 @@
                                 <td class="border p-3">{{ $document->district }}</td>
                                 <td class="border p-3">{{ $document->anchal }}</td>
                                 <td class="border p-3">{{ $document->mauza }}</td>
+                                <td class="border p-3">-</td>
+                                <td class="border p-3">{{ $document->file_path ? basename($document->file_path) : '-' }}</td>
                                 <td class="border p-3">₹{{ $document->price }}</td>
                                 <td class="border p-3 text-center">
                                      <a href="{{ url('/document/' . $document->id) }}" class="bg-blue-500 text-white px-4 py-2 rounded">Preview</a>
                                 </td>
                             </tr>
+                            @foreach($document->files as $file)
+                                <tr class="hover:bg-gray-50">
+                                    <td class="border p-3">{{ $document->title }}</td>
+                                    <td class="border p-3">{{ $document->district }}</td>
+                                    <td class="border p-3">{{ $document->anchal }}</td>
+                                    <td class="border p-3">{{ $document->mauza }}</td>
+                                    <td class="border p-3">{{ $file->title ?? '-' }}</td>
+                                    <td class="border p-3">{{ basename($file->file_path) }}</td>
+                                    <td class="border p-3">₹{{ $file->price ?? $document->price }}</td>
+                                    <td class="border p-3 text-center">
+                                         <a href="{{ url('/document/' . $document->id) }}" class="bg-blue-500 text-white px-4 py-2 rounded">Preview</a>
+                                    </td>
+                                </tr>
+                            @endforeach
                         @endforeach
                     </tbody>
                 </table>

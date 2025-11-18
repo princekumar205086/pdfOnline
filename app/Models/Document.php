@@ -30,4 +30,9 @@ class Document extends Model
     {
         return $this->hasMany(Purchase::class);
     }
+
+    public function files()
+    {
+        return $this->hasMany(DocumentFile::class);
+    }
 }

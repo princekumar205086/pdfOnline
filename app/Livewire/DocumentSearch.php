@@ -106,7 +106,7 @@ class DocumentSearch extends Component
     {
         $documents = collect();
         if ($this->result) {
-            $query = Document::query()->where('is_active', true);
+            $query = Document::query()->where('is_active', true)->with('files');
 
             if ($this->document_type) {
                 $query->where('document_type', 'like', '%' . $this->document_type . '%');

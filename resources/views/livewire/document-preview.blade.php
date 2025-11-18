@@ -31,6 +31,21 @@
 
     <main class="container mx-auto px-4 py-6">
         <h1 class="text-3xl font-bold text-gray-900 mb-6">{{ $document->title }}</h1>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div class="bg-white border border-gray-200 rounded p-4">
+                <div class="flex justify-between py-1"><span class="text-gray-600">Document Type</span><span class="font-medium">{{ $document->document_type }}</span></div>
+                <div class="flex justify-between py-1"><span class="text-gray-600">District</span><span class="font-medium">{{ $document->district }}</span></div>
+                <div class="flex justify-between py-1"><span class="text-gray-600">Anchal</span><span class="font-medium">{{ $document->anchal }}</span></div>
+                <div class="flex justify-between py-1"><span class="text-gray-600">Mauza</span><span class="font-medium">{{ $document->mauza }}</span></div>
+                <div class="flex justify-between py-1"><span class="text-gray-600">Thana No</span><span class="font-medium">{{ $document->thana_no }}</span></div>
+                <div class="flex justify-between py-1"><span class="text-gray-600">Status</span><span class="font-medium">{{ $document->is_active ? 'Active' : 'Inactive' }}</span></div>
+            </div>
+            <div class="bg-white border border-gray-200 rounded p-4">
+                <div class="flex justify-between py-1"><span class="text-gray-600">Primary File</span><span class="font-medium">{{ $document->file_path ? basename($document->file_path) : '-' }}</span></div>
+                <div class="flex justify-between py-1"><span class="text-gray-600">Primary Price</span><span class="font-medium">₹{{ number_format($document->price, 2) }}</span></div>
+            </div>
+            
+        </div>
 
         <!-- Document Preview -->
         <div class="preview-container relative rounded-lg mb-8 overflow-hidden">

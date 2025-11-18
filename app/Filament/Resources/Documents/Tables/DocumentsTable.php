@@ -28,9 +28,16 @@
                         ->searchable(),
                     TextColumn::make('thana_no')
                         ->searchable(),
-                    TextColumn::make('file_path')
+                    TextColumn::make('additional_title')
+                        ->label('File Title')
+                        ->toggleable(isToggledHiddenByDefault: true),
+                    TextColumn::make('additional_file_path')
+                        ->label('File Name')
+                        ->formatStateUsing(fn ($state, $record) => basename($state ?? $record->file_path))
                         ->searchable(),
                     TextColumn::make('price')
+                        ->label('Price')
+                        ->getStateUsing(fn ($record) => $record->additional_price ?? $record->price)
                         ->money('INR', true)
                         ->sortable(),
                     ToggleColumn::make('is_active'),
