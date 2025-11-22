@@ -74,7 +74,7 @@
         </iframe>
 
         <!-- Security Overlay -->
-        <div id="securityOverlay" class="absolute inset-0 z-10" style="pointer-events: auto;"></div>
+        <div id="securityOverlay" class="absolute inset-0 z-10" style="pointer-events: none;"></div>
     </div>
     
     <!-- Mobile help text -->
