@@ -4,130 +4,133 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\Document;
-use App\Models\Transaction;
-use App\Models\Purchase;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 class DocumentPreview extends Component
 {
     public Document $document;
     public ?string $previewDataUri = null;
+    public bool $showDetailsModal = false;
+    public bool $showPageSelector = false;
+    public ?string $selectedPages = null;
+    public int $totalPages = 0;
+    public array $pageArray = [];
+    public float $pricePerPage = 15;
+    public float $calculatedPrice = 0;
 
     public function mount(Document $document)
     {
         $this->document = $document;
+        $this->generateSecurePreviewUrl();
+        $this->getTotalPages();
+    }
 
-        // Prepare a secure inline preview without exposing any direct file URL
+    public function generateSecurePreviewUrl()
+    {
         try {
             if (Storage::disk('private')->exists($this->document->file_path)) {
                 $bytes = Storage::disk('private')->get($this->document->file_path);
-                // Embed as data URI to avoid any downloadable link or network request to the file
                 $this->previewDataUri = 'data:application/pdf;base64,' . base64_encode($bytes);
             }
         } catch (\Throwable $e) {
-            // If preview cannot be loaded, fail silently and show message in view
             $this->previewDataUri = null;
         }
+    }
 
-        // If returning from Cashfree, verify payment
-        $paymentId = request()->query('payment_id');
-        $orderId = request()->query('order_id');
-        if ((
-            $paymentId || $orderId
-        ) && Auth::check()) {
-            $cashfreeUrl = config('services.cashfree.url');
-            $apiKey = config('services.cashfree.key');
-            $apiSecret = config('services.cashfree.secret');
+    public function getTotalPages()
+    {
+        try {
+            if (Storage::disk('private')->exists($this->document->file_path)) {
+                $bytes = Storage::disk('private')->get($this->document->file_path);
+                $pdf = new \Smalot\PdfParser\Parser();
+                $document = $pdf->parseContent($bytes);
+                $this->totalPages = count($document->getPages());
+            }
+        } catch (\Throwable $e) {
+            $this->totalPages = 0;
+        }
+    }
 
-            if ($cashfreeUrl && $apiKey && $apiSecret) {
-                try {
-                    // Prefer verifying via Orders endpoint
-                    $headers = [
-                        'x-client-id' => $apiKey,
-                        'x-client-secret' => $apiSecret,
-                        'x-api-version' => '2022-01-01',
-                    ];
+    public function openDetailsModal()
+    {
+        $this->showDetailsModal = true;
+    }
 
-                    $verified = false;
-                    $data = null;
+    public function closeDetailsModal()
+    {
+        $this->showDetailsModal = false;
+    }
 
-                    if ($orderId) {
-                        $orderResp = Http::withHeaders($headers)
-                            ->timeout(30)
-                            ->get(rtrim($cashfreeUrl, '/') . '/orders/' . $orderId);
+    public function openPageSelector()
+    {
+        $this->showPageSelector = true;
+    }
 
-                        if ($orderResp->successful()) {
-                            $data = $orderResp->json();
-                            // Try multiple shapes: direct, nested
-                            $status = $data['order_status']
-                                ?? ($data['order']['order_status'] ?? null);
+    public function closePageSelector()
+    {
+        $this->showPageSelector = false;
+        $this->selectedPages = null;
+        $this->pageArray = [];
+        $this->calculatedPrice = 0;
+    }
 
-                            if (in_array($status, ['PAID', 'COMPLETED', 'SUCCESS'])) {
-                                $verified = true;
-                            } elseif ($status) {
-                                // Explicit failure
-                                $verified = false;
-                            }
-                        } else {
-                            // Fall through to payment endpoint
-                        }
-                    }
+    public function parsePages()
+    {
+        $this->validate([
+            'selectedPages' => 'required|string',
+        ], [
+            'selectedPages.required' => 'Please enter page numbers or ranges.',
+        ]);
 
-                    if (!$verified && $paymentId) {
-                        $payResp = Http::withHeaders($headers)
-                            ->timeout(30)
-                            ->get(rtrim($cashfreeUrl, '/') . '/payments/' . $paymentId);
+        $this->pageArray = [];
+        $parts = explode(',', str_replace(' ', '', $this->selectedPages));
 
-                        if ($payResp->successful()) {
-                            $data = $payResp->json();
-                            $status = $data['payment_status'] ?? $data['status'] ?? null;
-                            $orderId = $orderId
-                                ?? ($data['order_id'] ?? ($data['order']['order_id'] ?? null));
-                            if (in_array($status, ['SUCCESS', 'COMPLETED'])) {
-                                $verified = true;
-                            }
-                        }
-                    }
+        foreach ($parts as $part) {
+            if (strpos($part, '-') !== false) {
+                // Handle range like "5-7"
+                [$start, $end] = explode('-', $part);
+                $start = (int) trim($start);
+                $end = (int) trim($end);
 
-                    if ($verified && $orderId) {
-                        $transaction = Transaction::where('gateway_order_id', $orderId)
-                            ->where('document_id', $this->document->id)
-                            ->where('user_id', Auth::id())
-                            ->first();
-
-                        if ($transaction) {
-                            $transaction->update([
-                                'status' => 'completed',
-                                'gateway_payment_id' => $paymentId,
-                                'meta' => $data,
-                            ]);
-
-                            Purchase::firstOrCreate([
-                                'user_id' => $transaction->user_id,
-                                'document_id' => $transaction->document_id,
-                            ], [
-                                'transaction_id' => $transaction->id,
-                            ]);
-                        }
-                    } else {
-                        if ($orderId) {
-                            Transaction::where('gateway_order_id', $orderId)
-                                ->where('document_id', $this->document->id)
-                                ->where('user_id', Auth::id())
-                                ->update([
-                                    'status' => 'failed',
-                                    'meta' => $data,
-                                ]);
-                        }
-                        session()->flash('error', 'Payment verification failed: endpoint or status not valid.');
-                    }
-                } catch (\Exception $e) {
-                    session()->flash('error', 'Payment verification error: ' . $e->getMessage());
+                if ($start < 1 || $end > $this->totalPages || $start > $end) {
+                    $this->addError('selectedPages', "Invalid page range: {$part}. Pages must be between 1 and {$this->totalPages}.");
+                    return;
                 }
+
+                for ($i = $start; $i <= $end; $i++) {
+                    $this->pageArray[] = $i;
+                }
+            } else {
+                // Handle single page like "4"
+                $page = (int) trim($part);
+
+                if ($page < 1 || $page > $this->totalPages) {
+                    $this->addError('selectedPages', "Invalid page number: {$page}. Pages must be between 1 and {$this->totalPages}.");
+                    return;
+                }
+
+                $this->pageArray[] = $page;
             }
         }
+
+        // Remove duplicates and sort
+        $this->pageArray = array_unique($this->pageArray);
+        sort($this->pageArray);
+
+        // Calculate price
+        $this->calculatedPrice = count($this->pageArray) * $this->pricePerPage;
+    }
+
+    public function getPdfViewerUrl()
+    {
+        if (!$this->previewDataUri) {
+            return null;
+        }
+
+        $signed = URL::temporarySignedRoute('document.stream', now()->addMinutes(10), ['document' => $this->document->id]);
+        $viewerUrl = asset('pdfjs-5.4.394-dist/web/viewer.html');
+        return "{$viewerUrl}?file=" . urlencode($signed);
     }
 
     public function render()

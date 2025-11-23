@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\DocumentStreamController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DocumentDownloadController;
 use App\Http\Controllers\CashfreeWebhookController;
@@ -13,6 +14,10 @@ Route::get('/', DocumentSearch::class);
 
 // Document routes
 Route::get('/document/{document}', DocumentPreview::class)->middleware(['auth', 'verified'])->name('document.preview');
+
+Route::get('/document/stream/{document}', [DocumentStreamController::class, 'inline'])
+    ->name('document.stream')
+    ->middleware('signed');
 Route::get('/download/{document}', [DocumentDownloadController::class, 'download'])->middleware('signed')->name('document.download');
 
 // Webhook for payment notifications

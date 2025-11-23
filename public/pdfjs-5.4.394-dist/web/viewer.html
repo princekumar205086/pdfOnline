@@ -1,0 +1,320 @@
+﻿<!DOCTYPE html>
+<html dir="ltr" mozdisallowselectionprint>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta name="google" content="notranslate">
+    <title>PDF Document Viewer</title>
+
+    <!-- Use CDN for compatibility -->
+     <script src="https://cdn.taildindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js"></script>
+
+    <link rel="stylesheet" href="./viewer.css">
+
+    <style>
+      /* Hide download and print buttons for security */
+      #download, #print, 
+      .toolbarButton#download, 
+      .toolbarButton#print,
+      #secondaryDownload,
+      #secondaryPrint {
+        display: none !important;
+      }
+    </style>
+  </head>
+
+  <body tabindex="0">
+  
+    <div id="outerContainer">
+      <span id="viewer-alert" class="visuallyHidden" role="alert"></span>
+      <div id="sidebarContainer">
+        <div id="toolbarSidebar" class="toolbarHorizontalGroup">
+          <div id="toolbarSidebarLeft">
+            <div id="sidebarViewButtons" class="toolbarHorizontalGroup toggled" role="radiogroup">
+              <button id="viewThumbnail" class="toolbarButton toggled" type="button" tabindex="0" data-l10n-id="pdfjs-thumbs-button" role="radio" aria-checked="true" aria-controls="thumbnailView">
+                 <span data-l10n-id="pdfjs-thumbs-button-label">Thumbnails</span>
+              </button>
+              <button id="viewOutline" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-document-outline-button" role="radio" aria-checked="false" aria-controls="outlineView">
+                 <span data-l10n-id="pdfjs-document-outline-button-label">Document Outline</span>
+              </button>
+              <button id="viewAttachments" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-attachments-button" role="radio" aria-checked="false" aria-controls="attachmentsView">
+                 <span data-l10n-id="pdfjs-attachments-button-label">Attachments</span>
+              </button>
+              <button id="viewLayers" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-layers-button" role="radio" aria-checked="false" aria-controls="layersView">
+                 <span data-l10n-id="pdfjs-layers-button-label">Layers</span>
+              </button>
+            </div>
+          </div>
+
+          <div id="toolbarSidebarRight">
+            <div id="outlineOptionsContainer" class="toolbarHorizontalGroup">
+              <div class="verticalToolbarSeparator"></div>
+              <button id="currentOutlineItem" class="toolbarButton" type="button" disabled="disabled" tabindex="0" data-l10n-id="pdfjs-current-outline-item-button">
+                <span data-l10n-id="pdfjs-current-outline-item-button-label">Current Outline Item</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="sidebarContent">
+          <div id="thumbnailView"></div>
+          <div id="outlineView" class="hidden"></div>
+          <div id="attachmentsView" class="hidden"></div>
+          <div id="layersView" class="hidden"></div>
+        </div>
+        <div id="sidebarResizer"></div>
+      </div>
+
+      <div id="mainContainer">
+        <div class="toolbar">
+          <div id="toolbarContainer">
+            <div id="toolbarViewer" class="toolbarHorizontalGroup">
+              <div id="toolbarViewerLeft" class="toolbarHorizontalGroup">
+                <button id="sidebarToggle" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-toggle-sidebar-button" aria-expanded="false" aria-controls="sidebarContainer">
+                  <span data-l10n-id="pdfjs-toggle-sidebar-button-label">Toggle Sidebar</span>
+                </button>
+                
+
+                <div class="toolbarButtonSpacer"></div>
+                <button id="viewFind" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-findbar-button">
+                  <span data-l10n-id="pdfjs-findbar-button-label">Find</span>
+                </button>
+                <div class="splitToolbarButton hiddenSmallView">
+                  <button class="toolbarButton" type="button" id="previous" tabindex="0" data-l10n-id="pdfjs-previous-button">
+                    <span data-l10n-id="pdfjs-previous-button-label">Previous</span>
+                  </button>
+                  <div class="splitToolbarButtonSeparator"></div>
+                  <button class="toolbarButton" type="button" id="next" tabindex="0" data-l10n-id="pdfjs-next-button">
+                    <span data-l10n-id="pdfjs-next-button-label">Next</span>
+                  </button>
+                </div>
+                <input type="number" id="pageNumber" class="toolbarField" value="1" min="1" tabindex="0" data-l10n-id="pdfjs-page-input" autocomplete="off">
+                <span id="numPages" class="toolbarLabel"></span>
+              </div>
+              <div id="toolbarViewerMiddle" class="toolbarHorizontalGroup">
+                <button id="zoomOut" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-zoom-out-button">
+                  <span data-l10n-id="pdfjs-zoom-out-button-label">Zoom Out</span>
+                </button>
+                <div class="splitToolbarButtonSeparator"></div>
+                <button id="zoomIn" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-zoom-in-button">
+                  <span data-l10n-id="pdfjs-zoom-in-button-label">Zoom In</span>
+                </button>
+                <span id="scaleSelectContainer" class="dropdownToolbarButton">
+                  <select id="scaleSelect" tabindex="0" data-l10n-id="pdfjs-zoom-select">
+                    <option id="pageAutoOption" value="auto" selected="selected" data-l10n-id="pdfjs-page-scale-auto">Automatic Zoom</option>
+                    <option id="pageActualOption" value="page-actual" data-l10n-id="pdfjs-page-scale-actual">Actual Size</option>
+                    <option id="pageFitOption" value="page-fit" data-l10n-id="pdfjs-page-scale-fit">Fit Page</option>
+                    <option id="pageWidthOption" value="page-width" data-l10n-id="pdfjs-page-scale-width">Fit Width</option>
+                    <option value="0.5">50%</option>
+                    <option value="0.75">75%</option>
+                    <option value="1">100%</option>
+                    <option value="1.25">125%</option>
+                    <option value="1.5">150%</option>
+                    <option value="2">200%</option>
+                  </select>
+                </span>
+              </div>
+              <div id="toolbarViewerRight" class="toolbarHorizontalGroup">
+                <button id="presentationMode" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-presentation-mode-button">
+                  <span data-l10n-id="pdfjs-presentation-mode-button-label">Presentation Mode</span>
+                </button>
+                <button id="openFile" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-open-file-button">
+                  <span data-l10n-id="pdfjs-open-file-button-label">Open File</span>
+                </button>
+                <button id="print" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-print-button">
+                  <span data-l10n-id="pdfjs-print-button-label">Print</span>
+                </button>
+                <button id="download" class="toolbarButton" type="button" tabindex="0" data-l10n-id="pdfjs-download-button">
+                  <span data-l10n-id="pdfjs-download-button-label">Download</span>
+                </button>
+              </div>
+            </div>
+            <div id="loadingBar">
+              <div class="progress">
+                <div class="glimmer"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="viewerContainer" tabindex="0">
+          <div id="viewer" class="pdfViewer"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PDF.js Initialization Script -->
+    <script>
+    // Set the worker path
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+    // Get PDF file from URL parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const pdfFile = urlParams.get('file');
+
+    let pdfDocument = null;
+    let pageNum = 1;
+    let pageRendering = false;
+    let pageNumPending = null;
+    let scale = 1.0;
+
+    if (pdfFile) {
+      loadPDF(pdfFile);
+    } else {
+      showError('No PDF file specified');
+    }
+
+    function loadPDF(url) {
+      const loadingTask = pdfjsLib.getDocument(url);
+      
+      loadingTask.promise.then(function(pdf) {
+        pdfDocument = pdf;
+        document.getElementById('numPages').textContent = pdf.numPages;
+        
+        // Render first page
+        renderPage(pageNum);
+        
+        // Setup event listeners
+        setupEventListeners();
+        
+      }).catch(function(error) {
+        console.error('Error loading PDF:', error);
+        showError('Failed to load PDF: ' + error.message);
+      });
+    }
+
+    function renderPage(num) {
+      pageRendering = true;
+      
+      pdfDocument.getPage(num).then(function(page) {
+        const viewport = page.getViewport({ scale: scale });
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const wrapper = document.createElement('div');
+        
+        wrapper.className = 'page';
+        canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        wrapper.appendChild(canvas);
+        
+        // Clear previous pages
+        document.getElementById('viewer').innerHTML = '';
+        document.getElementById('viewer').appendChild(wrapper);
+        
+        const renderContext = {
+          canvasContext: ctx,
+          viewport: viewport
+        };
+        
+        const renderTask = page.render(renderContext);
+        
+        renderTask.promise.then(function() {
+          pageRendering = false;
+          
+          if (pageNumPending !== null) {
+            renderPage(pageNumPending);
+            pageNumPending = null;
+          }
+        });
+        
+      }).catch(function(error) {
+        console.error('Error rendering page:', error);
+        showError('Error rendering page: ' + error.message);
+      });
+      
+      document.getElementById('pageNumber').value = num;
+    }
+
+    function queueRenderPage(num) {
+      if (pageRendering) {
+        pageNumPending = num;
+      } else {
+        renderPage(num);
+      }
+    }
+
+    function setupEventListeners() {
+      // Previous page
+      document.getElementById('previous').addEventListener('click', function() {
+        if (pageNum <= 1) return;
+        pageNum--;
+        queueRenderPage(pageNum);
+      });
+
+      // Next page
+      document.getElementById('next').addEventListener('click', function() {
+        if (pageNum >= pdfDocument.numPages) return;
+        pageNum++;
+        queueRenderPage(pageNum);
+      });
+
+      // Page number input
+      document.getElementById('pageNumber').addEventListener('change', function() {
+        const newPageNum = parseInt(this.value);
+        if (newPageNum >= 1 && newPageNum <= pdfDocument.numPages) {
+          pageNum = newPageNum;
+          queueRenderPage(pageNum);
+        }
+      });
+
+      // Zoom controls
+      document.getElementById('zoomIn').addEventListener('click', function() {
+        scale += 0.2;
+        renderPage(pageNum);
+      });
+
+      document.getElementById('zoomOut').addEventListener('click', function() {
+        if (scale <= 0.2) return;
+        scale -= 0.2;
+        renderPage(pageNum);
+      });
+
+      // Scale select
+      document.getElementById('scaleSelect').addEventListener('change', function() {
+        const value = this.value;
+        if (value === 'auto') {
+          scale = 1.0;
+        } else if (value === 'page-actual') {
+          scale = 1.0;
+        } else if (value === 'page-fit') {
+          scale = 0.8;
+        } else if (value === 'page-width') {
+          scale = 1.2;
+        } else {
+          scale = parseFloat(value);
+        }
+        renderPage(pageNum);
+      });
+
+      // Sidebar toggle
+      document.getElementById('sidebarToggle').addEventListener('click', function() {
+        const sidebar = document.getElementById('sidebarContainer');
+        sidebar.classList.toggle('hidden');
+      });
+    }
+
+    function showError(message) {
+      document.getElementById('viewer').innerHTML = `
+        <div style="text-align: center; padding: 50px; color: red;">
+          <h3>Error</h3>
+          <p>${message}</p>
+        </div>
+      `;
+    }
+
+    // Security: Disable right-click and keyboard shortcuts
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+      return false;
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && (e.key === 's' || e.key === 'p')) {
+        e.preventDefault();
+        return false;
+      }
+    });
+    </script>
+  </body>
+</html>

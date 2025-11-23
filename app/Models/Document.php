@@ -10,16 +10,17 @@ class Document extends Model
     use HasFactory;
 
     protected $fillable = [
-        'title',
-        'document_type',
-        'district',
-        'anchal',
-        'mauza',
-        'thana_no',
-        'file_path',
-        'price',
-        'is_active',
-    ];
+    'title',
+    'document_type',
+    'district',
+    'anchal',
+    'mauza',
+    'thana_no',
+    'file_path',
+    'price',
+    'is_active',
+];
+
 
     public function transactions()
     {
