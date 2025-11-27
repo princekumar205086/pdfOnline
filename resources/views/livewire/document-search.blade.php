@@ -101,7 +101,7 @@
                 <table class="min-w-full border border-gray-200 bg-white rounded-md overflow-hidden">
                     <thead class="bg-gray-100">
                         <tr>
-                            <th class="border p-3 text-left">Document Title</th>
+                            <th class="border p-3 text-left">Khata No.</th>
                             <th class="border p-3 text-left">District</th>
                             <th class="border p-3 text-left">Anchal</th>
                             <th class="border p-3 text-left">Mauza</th>
