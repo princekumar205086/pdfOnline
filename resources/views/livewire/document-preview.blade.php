@@ -51,7 +51,7 @@
                 <div class="flex justify-between py-1"><span class="text-gray-600">Primary File</span><span
                         class="font-medium">{{ $document->file_path ? basename($document->file_path) : '-' }}</span>
                 </div>
-                <div class="flex justify-between py-1"><span class="text-gray-600">Primary Price</span><span
+                <div class="flex justify-between py-1"><span class="text-gray-600">Price</span><span
                         class="font-medium">₹{{ number_format($document->price, 2) }}</span></div>
             </div>
 

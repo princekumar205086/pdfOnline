@@ -6,12 +6,14 @@
                     <span class="text-sm text-gray-700">{{ Auth::user()->name }}</span>
                     <form method="POST" action="{{ route('logout') }}" class="inline">
                         @csrf
-                        <button type="submit" class="px-4 py-1.5 border rounded text-sm text-gray-700 hover:bg-gray-50">Log out</button>
+                        <button type="submit" class="px-4 py-1.5 border rounded text-sm text-gray-700 hover:bg-gray-50">Log
+                            out</button>
                     </form>
                 @else
                     <a href="{{ route('login') }}" class="px-4 py-1.5 text-sm text-gray-700">Log in</a>
                     @if (Route::has('register'))
-                        <a href="{{ route('register') }}" class="px-4 py-1.5 border rounded text-sm text-gray-700 hover:bg-gray-50">Register</a>
+                        <a href="{{ route('register') }}"
+                            class="px-4 py-1.5 border rounded text-sm text-gray-700 hover:bg-gray-50">Register</a>
                     @endif
                 @endauth
             @endif
@@ -51,7 +53,8 @@
             </div>
 
             <div>
-                <select wire:model.live="anchal" class="border p-2 rounded w-full" @if(!$this->districts->count()) disabled @endif>
+                <select wire:model.live="anchal" class="border p-2 rounded w-full" @if(!$this->districts->count())
+                disabled @endif>
                     <option value="">Select Anchal Office</option>
                     @foreach($this->anchals as $anchal)
                         <option value="{{ $anchal }}">{{ $anchal }}</option>
@@ -63,7 +66,8 @@
             </div>
 
             <div>
-                <select wire:model.live="mauza" class="border p-2 rounded w-full" @if(!$this->mauzas->count()) disabled @endif>
+                <select wire:model.live="mauza" class="border p-2 rounded w-full" @if(!$this->mauzas->count()) disabled
+                @endif>
                     <option value="">Select Mauza</option>
                     @foreach($this->mauzas as $mauza)
                         <option value="{{ $mauza }}">{{ $mauza }}</option>
@@ -75,7 +79,8 @@
             </div>
 
             <div>
-                <select wire:model.live="thana_no" class="border p-2 rounded w-full" @if(!$this->thanas->count()) disabled @endif>
+                <select wire:model.live="thana_no" class="border p-2 rounded w-full" @if(!$this->thanas->count())
+                disabled @endif>
                     <option value="">Select Thana No.</option>
                     @foreach($this->thanas as $thana)
                         <option value="{{ $thana }}">{{ $thana }}</option>
@@ -88,8 +93,10 @@
         </div>
 
         <div class="flex flex-wrap gap-3 mb-6">
-            <button wire:click="search" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Search</button>
-            <button wire:click="resetSelection" class="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700">Reset</button>
+            <button wire:click="search"
+                class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Search</button>
+            <button wire:click="resetSelection"
+                class="bg-gray-600 text-white px-6 py-2 rounded hover:bg-gray-700">Reset</button>
         </div>
 
         @if(!$result)
@@ -122,7 +129,10 @@
                                 <td class="border p-3">{{ $document->file_path ? basename($document->file_path) : '-' }}</td>
                                 <td class="border p-3">₹{{ $document->price }}</td>
                                 <td class="border p-3 text-center">
-                                     <a href="{{ url('/document/' . $document->id) }}" class="bg-blue-500 text-white px-4 py-2 rounded">Preview</a>
+                                    <a href="{{ url('/document/' . $document->id . '?type=primary') }}"
+                                        class="bg-blue-500 text-white px-4 py-2 rounded">
+                                        Preview
+                                    </a>
                                 </td>
                             </tr>
                             @foreach($document->files as $file)
@@ -135,7 +145,10 @@
                                     <td class="border p-3">{{ basename($file->file_path) }}</td>
                                     <td class="border p-3">₹{{ $file->price ?? $document->price }}</td>
                                     <td class="border p-3 text-center">
-                                         <a href="{{ url('/document/' . $document->id) }}" class="bg-blue-500 text-white px-4 py-2 rounded">Preview</a>
+                                        <a href="{{ url('/document/' . $document->id . '?type=additional&file_id=' . $file->id) }}"
+                                            class="bg-blue-500 text-white px-4 py-2 rounded">
+                                            Preview
+                                        </a>
                                     </td>
                                 </tr>
                             @endforeach

@@ -17,116 +17,33 @@ class DocumentPreview extends Component
 
     public function mount(Document $document)
     {
-        $this->document = $document->load('files');
+        // Load full document with files
+        $this->document = Document::with('files')->findOrFail($document->id);
 
-        // Prepare a secure inline preview without exposing any direct file URL
+        // Read query values
+        $type = request('type');
+        $fileId = request('file_id');
+
+        // If additional price selected
+        if ($type === 'additional' && $fileId) {
+
+            $file = $this->document->files->where('id', $fileId)->first();
+
+            if ($file) {
+                // Override the price with additional file price
+                $this->document->price = $file->price;  // ⭐ THE IMPORTANT FIX
+                $this->document->file_path = $file->file_path; // ⭐ Also load correct file for preview
+            }
+        }
+
+        // Prepare PDF preview
         try {
             if (Storage::disk('private')->exists($this->document->file_path)) {
                 $bytes = Storage::disk('private')->get($this->document->file_path);
-                // Embed as data URI to avoid any downloadable link or network request to the file
                 $this->previewDataUri = 'data:application/pdf;base64,' . base64_encode($bytes);
             }
         } catch (\Throwable $e) {
-            // If preview cannot be loaded, fail silently and show message in view
             $this->previewDataUri = null;
-        }
-
-        // If returning from Cashfree, verify payment
-        $paymentId = request()->query('payment_id');
-        $orderId = request()->query('order_id');
-        if ((
-            $paymentId || $orderId
-        ) && Auth::check()) {
-            $cashfreeUrl = config('services.cashfree.url');
-            $apiKey = config('services.cashfree.key');
-            $apiSecret = config('services.cashfree.secret');
-
-            if ($cashfreeUrl && $apiKey && $apiSecret) {
-                try {
-                    // Prefer verifying via Orders endpoint
-                    $headers = [
-                        'x-client-id' => $apiKey,
-                        'x-client-secret' => $apiSecret,
-                        'x-api-version' => '2022-01-01',
-                    ];
-
-                    $verified = false;
-                    $data = null;
-
-                    if ($orderId) {
-                        $orderResp = Http::withHeaders($headers)
-                            ->timeout(30)
-                            ->get(rtrim($cashfreeUrl, '/') . '/orders/' . $orderId);
-
-                        if ($orderResp->successful()) {
-                            $data = $orderResp->json();
-                            // Try multiple shapes: direct, nested
-                            $status = $data['order_status']
-                                ?? ($data['order']['order_status'] ?? null);
-
-                            if (in_array($status, ['PAID', 'COMPLETED', 'SUCCESS'])) {
-                                $verified = true;
-                            } elseif ($status) {
-                                // Explicit failure
-                                $verified = false;
-                            }
-                        } else {
-                            // Fall through to payment endpoint
-                        }
-                    }
-
-                    if (!$verified && $paymentId) {
-                        $payResp = Http::withHeaders($headers)
-                            ->timeout(30)
-                            ->get(rtrim($cashfreeUrl, '/') . '/payments/' . $paymentId);
-
-                        if ($payResp->successful()) {
-                            $data = $payResp->json();
-                            $status = $data['payment_status'] ?? $data['status'] ?? null;
-                            $orderId = $orderId
-                                ?? ($data['order_id'] ?? ($data['order']['order_id'] ?? null));
-                            if (in_array($status, ['SUCCESS', 'COMPLETED'])) {
-                                $verified = true;
-                            }
-                        }
-                    }
-
-                    if ($verified && $orderId) {
-                        $transaction = Transaction::where('gateway_order_id', $orderId)
-                            ->where('document_id', $this->document->id)
-                            ->where('user_id', Auth::id())
-                            ->first();
-
-                        if ($transaction) {
-                            $transaction->update([
-                                'status' => 'completed',
-                                'gateway_payment_id' => $paymentId,
-                                'meta' => $data,
-                            ]);
-
-                            Purchase::firstOrCreate([
-                                'user_id' => $transaction->user_id,
-                                'document_id' => $transaction->document_id,
-                            ], [
-                                'transaction_id' => $transaction->id,
-                            ]);
-                        }
-                    } else {
-                        if ($orderId) {
-                            Transaction::where('gateway_order_id', $orderId)
-                                ->where('document_id', $this->document->id)
-                                ->where('user_id', Auth::id())
-                                ->update([
-                                    'status' => 'failed',
-                                    'meta' => $data,
-                                ]);
-                        }
-                        session()->flash('error', 'Payment verification failed: endpoint or status not valid.');
-                    }
-                } catch (\Exception $e) {
-                    session()->flash('error', 'Payment verification error: ' . $e->getMessage());
-                }
-            }
         }
     }
 
